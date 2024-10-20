@@ -1,0 +1,30 @@
+Shortcut Key Windows	Description
+Ctrl + 3	It puts the focus into Quick Access search box.
+Ctrl + S	Save current editor
+Ctrl + 1	Quickfix for errors and warnings, depends on the cursor position
+Ctrl + Space	Content assist and code completion
+Ctrl + Shift + F	Format source code
+Ctrl + Q	Moves cursor to the last edited position
+Ctrl + D	Deletes current line in the editor
+Ctrl + Shift + O	Organize imports in the current java file
+Ctrl +2 + L	Assign statement to new local variable
+Ctrl + 2 + F	Assign statement to a field
+Ctrl + O	Shows quick outline of the java class
+Ctrl + F11	Runs the current opened java class if main method exists or else run the last launched application
+Ctrl + Shift + R	Open / Search for resources
+Ctrl + Shift + T	Open / Search for types, very useful in finding classes
+Ctrl + E	To select an editor from the currently open editors
+Ctrl + F8	Shortcut for switching perspectives
+Alt + ← or Alt + →	Go to previous/ next editor position in history
+F3	Move cursor to the declaration of the variable
+Ctrl + Shift + P	Move cursor to the matching bracket
+Ctrl + .	Go to the next problem
+Ctrl + ,	Go to the previous problem
+F4	Show type hierarchy of the variable
+Ctrl + K	Find next for search text in the opened editor
+Ctrl + Shift + G	Search for references in the workspace
+Ctrl + T	Shows type hierarchy of the current java class
+Ctrl + M	Maximize Java editor
+Shift + F2	Shows the javadoc of the method, class
+Alt + Shift + R	Rename of package, class etc
+Alt + Shift + T	Opens the quick refactoring menu
