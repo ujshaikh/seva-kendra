@@ -10,7 +10,7 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.rtcsoft</groupId>
-	<artifactId>setu-kendra</artifactId>
+	<artifactId>seva-kendra</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>setu-kendra</name>
 	<description>REST API for gramin setu kendra</description>
