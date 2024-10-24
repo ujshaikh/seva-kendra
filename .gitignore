@@ -24,3 +24,9 @@ log-camel-lsp.out
 components/camel-cxf/activemq-data
 *.swp
 .flattened-pom.xml
+
+
+src/main/resources/application.properties
+src/main/resources/docs/*
+src/main/resources/output/*
+license/*

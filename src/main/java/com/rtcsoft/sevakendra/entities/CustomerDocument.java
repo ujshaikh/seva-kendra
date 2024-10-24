@@ -25,55 +25,34 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "customers")
-public class Customer {
+@Table(name = "customer_documents")
+public class CustomerDocument {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(nullable = false)
+	private Integer id;
+
 	@NotNull
 	@Column
-	private Long id;
+	private long customerId;
 
 	@NotBlank
-	@Column(length = 50)
-	private String firstName;
-
-	@Column(length = 50)
-	private String middleName;
+	@Column
+	private String docName;
 
 	@NotBlank
-	@Column(length = 50)
-	private String lastName;
+	@Column
+	private String docPath;
 
-	@Column(length = 10)
-	private String age;
-
-	@Column(length = 20)
-	private String cast;
-
-	@Column(length = 20)
-	private String occupation;
-
-	@Column(length = 20)
-	private String place;
-
-	@Column(length = 20)
-	private String aadharNumber;
-
-	@Column(length = 20)
-	private String phoneNumber;
-
-	@Column(length = 255)
-	private String address;
+	@Column
+	private String thumbnail;
 
 	@Column
 	private Boolean isActive = true;
 
-	@Column
-	private String image;
-
 	@NotNull
 	@Column
-	private Long userId;
+	private long userId;
 
 	@CreationTimestamp
 	@Column(updatable = false)
@@ -82,10 +61,4 @@ public class Customer {
 	@UpdateTimestamp
 	@Column
 	private Date updatedAt;
-
-	@Override
-	public String toString() {
-		return "User{" + "id=" + id + ", fullName='" + firstName + '\'' + ", isActive=" + isActive + ", address="
-				+ address + '}';
-	}
 }
