@@ -1,6 +1,6 @@
 package com.rtcsoft.sevakendra.entities;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -56,9 +56,9 @@ public class CustomerDocument {
 
 	@CreationTimestamp
 	@Column(updatable = false)
-	private Date createdAt;
+	private LocalDateTime createdAt;
 
 	@UpdateTimestamp
 	@Column
-	private Date updatedAt;
+	private LocalDateTime updatedAt;
 }

@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CustomerDocumentDTO {
-
+	private long id;
 	private String docName;
 	private String docExt;
 	private String docPath;

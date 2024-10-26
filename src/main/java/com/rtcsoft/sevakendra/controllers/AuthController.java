@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,8 +23,10 @@ import com.rtcsoft.sevakendra.responses.LoginResponse;
 import com.rtcsoft.sevakendra.services.AuthService;
 import com.rtcsoft.sevakendra.services.JwtService;
 import com.rtcsoft.sevakendra.services.ResetPasswordService;
+import com.rtcsoft.sevakendra.services.TokenBlacklistService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 @RequestMapping("/auth")
 @RestController
@@ -34,6 +37,11 @@ public class AuthController {
 	private final AuthService authService;
 	@Autowired
 	private ResetPasswordService resetPasswordService;
+	@Autowired
+	HttpServletRequest request;
+
+	@Autowired
+	private TokenBlacklistService tokenBlacklistService;
 
 	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
@@ -60,21 +68,36 @@ public class AuthController {
 
 	@PostMapping("/login")
 	public ResponseEntity<LoginResponse> authenticate(@RequestBody LoginUserDTO loginUserDto) {
-		System.out.println("Test Login");
 		User authenticatedUser = authService.authenticate(loginUserDto);
+		// Store the user ID in session
+		HttpSession session = request.getSession();
+		Long userId = authenticatedUser.getId();
+		System.out.println("Setting Session " + userId);
+		session.setAttribute("userId", userId);
+		session.setAttribute("userName", authenticatedUser.getEmail());
 
 		String jwtToken = jwtService.generateToken(authenticatedUser);
 
 		LoginResponse loginResponse = new LoginResponse().setToken(jwtToken)
-				.setExpiresIn(jwtService.getExpirationTime());
+				.setExpiresIn(jwtService.getExpirationTime()).setUserId(userId);
 
 		return ResponseEntity.ok(loginResponse);
+	}
+
+	@PostMapping("/logout")
+	public String logout(@RequestHeader("Authorization") String token, HttpSession session) {
+		if (token != null && token.startsWith("Bearer ")) {
+			String jwtToken = token.substring(7); // Remove "Bearer " prefix
+			tokenBlacklistService.addTokenToBlacklist(jwtToken);
+		}
+
+		authService.logoutUser(session);
+		return "User logged out successfully";
 	}
 
 	@PostMapping("/forgot-password")
 	public String forgotPassword(@RequestBody LoginUserDTO loginUserDto, HttpServletRequest request)
 			throws URISyntaxException {
-//		logger.info("Forgot Password ");
 		String response = resetPasswordService.forgotPassword(loginUserDto.getEmail());
 
 		if (!response.startsWith("Invalid")) {

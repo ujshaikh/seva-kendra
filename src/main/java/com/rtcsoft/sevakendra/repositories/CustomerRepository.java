@@ -22,4 +22,12 @@ public interface CustomerRepository extends CrudRepository<Customer, Long> {
 
 	void deleteById(long id);
 
+	@Query("SELECT c FROM Customer c WHERE c.firstName = ?1 AND c.middleName = ?2 AND c.lastName = ?3 AND c.id != id")
+	ArrayList<Customer> findByFullNameExcludingMe(long id, String fname, String mname, String lname);
+
+	// @Query("SELECT c FROM Customer c WHERE c.userId = ?1")
+	ArrayList<Customer> findAllByUserId(Long userId);
+
+//	List<Customer> findAllById(long userId);
+
 }

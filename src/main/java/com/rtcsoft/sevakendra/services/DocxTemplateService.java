@@ -34,9 +34,11 @@ import org.springframework.stereotype.Service;
 import com.rtcsoft.sevakendra.dtos.CustomerDocumentDTO;
 import com.rtcsoft.sevakendra.entities.Customer;
 import com.rtcsoft.sevakendra.entities.CustomerDocument;
-import com.rtcsoft.sevakendra.exceptions.CustomerException;
+import com.rtcsoft.sevakendra.exceptions.ApiException;
 import com.rtcsoft.sevakendra.repositories.CustomerDocumentRepository;
 import com.rtcsoft.sevakendra.repositories.CustomerRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * @class WordService
@@ -62,21 +64,34 @@ public class DocxTemplateService {
 	@Autowired
 	CustomerDocumentRepository customerDocumentRepository;
 
-	public ResponseEntity<CustomerDocument> create(CustomerDocumentDTO input) throws CustomerException {
+	@Autowired
+	private SharedService sharedService;
+
+	@Autowired
+	HttpServletRequest request;
+
+	/**
+	 * Create or Update help to generate document with new/updated input
+	 * 
+	 * @param input
+	 * @return CustomerDocument
+	 * @throws ApiException
+	 */
+	public ResponseEntity<CustomerDocument> createOrUpdate(CustomerDocumentDTO input) throws ApiException {
 		try {
-			String path = generateDocument(input);
-
+			Optional<CustomerDocument> existingCustDoc = customerDocumentRepository.findById(input.getId());
+			String path = generateDocument(input, existingCustDoc);
 			if (path != null) {
-				CustomerDocument customerDocument = new CustomerDocument();
-				customerDocument.setUserId(input.getUserId());
-				customerDocument.setCustomerId(input.getCustomerId());
-				customerDocument.setDocName(input.getDocName());
-				customerDocument.setThumbnail(input.getThumbnail());
-				customerDocument.setDocPath(path);
+				CustomerDocument custDoc = existingCustDoc.orElseGet(CustomerDocument::new);
+				custDoc.setUserId(Optional.ofNullable(input.getUserId()).orElse(custDoc.getUserId()));
+				custDoc.setCustomerId(Optional.ofNullable(input.getCustomerId()).orElse(custDoc.getCustomerId()));
+				custDoc.setDocName(Optional.ofNullable(input.getDocName()).orElse(custDoc.getDocName()));
+				custDoc.setThumbnail(Optional.ofNullable(input.getThumbnail()).orElse(custDoc.getThumbnail()));
+				custDoc.setDocPath(path);
 
-				CustomerDocument created = customerDocumentRepository.save(customerDocument);
+				customerDocumentRepository.save(custDoc);
 
-				return ResponseEntity.status(HttpStatus.CREATED).body(customerDocument);
+				return ResponseEntity.status(HttpStatus.CREATED).body(custDoc);
 			}
 
 		} catch (Exception e) {
@@ -84,6 +99,29 @@ public class DocxTemplateService {
 			LOGGER.error(e.getMessage());
 		}
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	}
+
+	public ResponseEntity<List<CustomerDocument>> getAllDocuments() {
+		Long userId = sharedService.getUserIdFromSession(request);
+		List<CustomerDocument> customerDocuments = customerDocumentRepository.findAllByUserId(userId);
+		return ResponseEntity.status(HttpStatus.OK).body(customerDocuments);
+	}
+
+	public ResponseEntity<Optional<CustomerDocument>> findById(long id) {
+		Long userId = sharedService.getUserIdFromSession(request);
+		Optional<CustomerDocument> cdoc = customerDocumentRepository.findWithUserId(id, userId);
+		if (cdoc.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+		}
+
+		return ResponseEntity.status(HttpStatus.OK).body(cdoc);
+	}
+	
+	public ResponseEntity<CustomerDocument> delete(long id) throws ApiException {
+		CustomerDocument existingCustDoc = customerDocumentRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("Customer not found with id " + id));
+		customerDocumentRepository.deleteById(id);
+		return ResponseEntity.status(HttpStatus.OK).body(existingCustDoc);
 	}
 
 	private Optional<HashMap<String, Object>> prepareDataMap(CustomerDocumentDTO customerDocument) {
@@ -120,6 +158,8 @@ public class DocxTemplateService {
 
 	/**
 	 * Method for generating DocX report by replacing data in existing template
+	 * 
+	 * @param existingCustDoc
 	 *
 	 * @param docXTemplateFileWithExtension given name of docX template with
 	 *                                      extension
@@ -130,10 +170,10 @@ public class DocxTemplateService {
 	 * @throws IOException input|output exception
 	 **/
 
-	public String generateDocument(CustomerDocumentDTO customerDocument) throws IOException {
+	public String generateDocument(CustomerDocumentDTO customerDocument, Optional<CustomerDocument> existingCustDoc)
+			throws IOException {
 		Optional<HashMap<String, Object>> data = prepareDataMap(customerDocument);
 		if (!data.isEmpty()) {
-			System.out.println(data.toString());
 			Optional<Customer> customer = customerRepository.findById(customerDocument.getCustomerId());
 
 			Supplier<RuntimeException> exceptionSupplier = () -> new RuntimeException("Customer not found");
@@ -149,8 +189,8 @@ public class DocxTemplateService {
 				xwpfDocument.write(outputStream);
 
 				// Create target path using first name, last name and document name from this
-				// request
-				String docName = customerDocument.getDocName();
+				String docNameFromDb = existingCustDoc.map(CustomerDocument::getDocName).orElse("unknown-document");
+				String docName = Optional.ofNullable(customerDocument.getDocName()).orElse(docNameFromDb);
 				String targetFileExt = getFileExtension(SRC);
 				String targetFilePath = String.format("%s%s-%s-%s.%s", DEST_PATH, firstName, lastName, docName,
 						targetFileExt);
@@ -210,8 +250,6 @@ public class DocxTemplateService {
 					String key = entry.getKey();
 					String value = (String) entry.getValue();
 
-					System.out.println("Key-" + key + "Value-" + value);
-
 					text = paragraph.getText();
 					if (!text.contains("${")) {
 						return;
@@ -233,7 +271,6 @@ public class DocxTemplateService {
 							}
 
 							if (isImageFile(value)) {
-								System.out.println("CHECKING IMG FILE" + value);
 								run.setText(runsText.contains(find) ? runsText.replace(find, "") : runsText, 0);
 								insertImage(run, value);
 							} else {
@@ -285,8 +322,6 @@ public class DocxTemplateService {
 	}
 
 	public String getFileExtension(String filePath) {
-//		String originalFilename = file.getOriginalFilename();
-
 		if (filePath != null && filePath.contains(".")) {
 			return filePath.substring(filePath.lastIndexOf(".") + 1);
 		} else {

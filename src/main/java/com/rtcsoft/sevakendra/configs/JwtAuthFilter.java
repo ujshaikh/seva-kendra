@@ -2,6 +2,7 @@ package com.rtcsoft.sevakendra.configs;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,11 +15,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.rtcsoft.sevakendra.services.JwtService;
+import com.rtcsoft.sevakendra.services.SharedService;
+import com.rtcsoft.sevakendra.services.TokenBlacklistService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -27,11 +31,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
 
+	@Autowired
+	private final SharedService sharedService;
+	@Autowired
+	HttpSession session;
+
+	@Autowired
+	private TokenBlacklistService tokenBlacklistService;
+
 	public JwtAuthFilter(JwtService jwtService, UserDetailsService userDetailsService,
-			HandlerExceptionResolver handlerExceptionResolver) {
+			HandlerExceptionResolver handlerExceptionResolver, SharedService sharedService) {
 		this.jwtService = jwtService;
 		this.userDetailsService = userDetailsService;
 		this.handlerExceptionResolver = handlerExceptionResolver;
+		this.sharedService = sharedService;
 	}
 
 	@Override
@@ -48,6 +61,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 			final String jwt = authHeader.substring(7);
 			final String userEmail = jwtService.extractUsername(jwt);
 
+			// Check if the token is blacklisted
+			if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has been blacklisted");
+				return;
+			}
+
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 			if (userEmail != null && authentication == null) {
@@ -59,6 +78,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 					SecurityContextHolder.getContext().setAuthentication(authToken);
+
+					// Get userName form http session: Added on 26/10/2024
+					if (!sharedService.checkAccessBySessionAtrribute(request)) {
+						response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorised access!");
+						return;
+					}
 				}
 			}
 

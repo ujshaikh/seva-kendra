@@ -1,6 +1,6 @@
 package com.rtcsoft.sevakendra.entities;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -28,7 +28,7 @@ import lombok.Setter;
 @Table(name = "customers")
 public class Customer {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	@NotNull
 	@Column
 	private Long id;
@@ -77,15 +77,9 @@ public class Customer {
 
 	@CreationTimestamp
 	@Column(updatable = false)
-	private Date createdAt;
+	private LocalDateTime createdAt;
 
 	@UpdateTimestamp
 	@Column
-	private Date updatedAt;
-
-	@Override
-	public String toString() {
-		return "User{" + "id=" + id + ", fullName='" + firstName + '\'' + ", isActive=" + isActive + ", address="
-				+ address + '}';
-	}
+	private LocalDateTime updatedAt;
 }

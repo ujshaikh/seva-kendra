@@ -16,16 +16,20 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Table(name = "users")
 @Entity
+@Getter
+@Setter
 public class User implements UserDetails {
 	private static final long serialVersionUID = 1L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(nullable = false)
-	private Integer id;
+	private Long id;
 
 	@Column(nullable = false)
 	private String fullName;
@@ -56,16 +60,6 @@ public class User implements UserDetails {
 	}
 
 	@Override
-	public String getPassword() {
-		return password;
-	}
-
-	@Override
-	public String getUsername() {
-		return email;
-	}
-
-	@Override
 	public boolean isAccountNonExpired() {
 		return true;
 	}
@@ -85,54 +79,12 @@ public class User implements UserDetails {
 		return true;
 	}
 
-	public Integer getId() {
-		return id;
+	public LocalDateTime getTokenCreationDate() {
+		return tokenCreationDate;
 	}
 
-	public User setId(Integer id) {
-		this.id = id;
-		return this;
-	}
-
-	public String getFullName() {
-		return fullName;
-	}
-
-	public User setFullName(String fullName) {
-		this.fullName = fullName;
-		return this;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public User setEmail(String email) {
-		this.email = email;
-		return this;
-	}
-
-	public User setPassword(String password) {
-		this.password = password;
-		return this;
-	}
-
-	public Date getCreatedAt() {
-		return createdAt;
-	}
-
-	public User setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-		return this;
-	}
-
-	public Date getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public User setUpdatedAt(Date updatedAt) {
-		this.updatedAt = updatedAt;
-		return this;
+	public void setTokenCreationDate(LocalDateTime tokenCreationDate) {
+		this.tokenCreationDate = tokenCreationDate;
 	}
 
 	@Override
@@ -141,19 +93,9 @@ public class User implements UserDetails {
 				+ password + '\'' + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + '}';
 	}
 
-	public void setToken(String token) {
-		this.token = token;
+	@Override
+	public String getUsername() {
+		return email;
 	}
 
-	public String getToken() {
-		return token;
-	}
-
-	public LocalDateTime getTokenCreationDate() {
-		return tokenCreationDate;
-	}
-
-	public void setTokenCreationDate(LocalDateTime tokenCreationDate) {
-		this.tokenCreationDate = tokenCreationDate;
-	}
 }
