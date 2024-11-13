@@ -69,6 +69,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+			System.out.println("Checking email and auth");
 			if (userEmail != null && authentication == null) {
 				UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
@@ -82,11 +83,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 					// Get userName form http session: Added on 26/10/2024
 					if (!sharedService.checkAccessBySessionAtrribute(request)) {
 						response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorised access!");
-						return;
+						throw new RuntimeException("Unauthorised access!");
 					}
 				}
 			}
 
+			System.out.println("Above Filter chain");
 			filterChain.doFilter(request, response);
 		} catch (Exception exception) {
 			handlerExceptionResolver.resolveException(request, response, null, exception);

@@ -11,6 +11,7 @@ public class SharedService {
 	public boolean checkAccessBySessionAtrribute(@NonNull HttpServletRequest request) {
 		Long authUserId = getUserIdFromHeader(request);
 		Long sessionUserId = getUserIdFromSession(request);
+		System.out.println("Checking session");
 		return authUserId.equals(sessionUserId);
 	}
 

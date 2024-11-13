@@ -5,13 +5,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.rtcsoft.sevakendra.entities.User;
 
 public abstract class CustomUserDetails implements UserDetails {
-	private Integer userId;
+	private Long userId;
 
 	public CustomUserDetails(User user) {
 		this.userId = user.getId();
 	}
 
-	public Integer getId() {
+	public Long getId() {
 		return userId;
 	}
 }

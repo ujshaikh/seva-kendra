@@ -1,31 +1,27 @@
 package com.rtcsoft.sevakendra.dtos;
 
-public class RegisterUserDTO {
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
+@Data
+@Getter
+@Setter
+public class RegisterUserDTO {
+	@Email(message = "Email is not in valid format!")
+	@NotBlank(message = "Email is required!")
 	private String email;
 
+	@NotBlank(message = "Password required!")
+	@Size(min = 4, max = 10, message = "Password must have 4 to 10 characters!")
 	private String password;
 
 	private String fullName;
 
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getFullName() {
-		return fullName;
-	}
-
-	public void setFullName(String fullName) {
-		this.fullName = fullName;
-	}
-
-	public CharSequence getPassword() {
-		// TODO Auto-generated method stub
-		return password;
-	}
+	@NotBlank(message = "Mobile number required!")
+	@Size(min = 10, max = 10, message = "Invalid mobile number")
+	private String mobileNumber;
 }

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class LoginUserDTO {
 	@Email(message = "Email is not in valid format!")
 	@NotBlank(message = "Email is required!")
@@ -19,16 +20,7 @@ public class LoginUserDTO {
 	@Size(min = 4, max = 10, message = "Password must have 4 to 10 characters!")
 	private String password;
 
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public Object getPassword() {
-		// TODO Auto-generated method stub
-		return password;
-	}
+	@NotBlank(message = "Mobile number required!")
+	@Size(min = 10, max = 10, message = "Invalid mobile number")
+	private String mobileNumber;
 }

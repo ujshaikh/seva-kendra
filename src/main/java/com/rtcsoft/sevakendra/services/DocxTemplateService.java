@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -51,7 +50,7 @@ public class DocxTemplateService {
 	private static String IMG_SRC = "src/main/resources/images/rtc-logo.png";
 
 	private static String SRC = "src/main/resources/docs/cast-certificate.docx";
-	private static String DEST_PATH = "src/main/resources/output/";
+	private static String DEST_PATH = "src/main/resources/static/uploads/";
 	// private static String FONT1 =
 	// "src/main/resources/fonts/NotoSans/static/NotoSans-Black.ttf";
 	private static String FONT2 = "src/main/resources/fonts/freesans/FreeSans.ttf";
@@ -116,7 +115,7 @@ public class DocxTemplateService {
 
 		return ResponseEntity.status(HttpStatus.OK).body(cdoc);
 	}
-	
+
 	public ResponseEntity<CustomerDocument> delete(long id) throws ApiException {
 		CustomerDocument existingCustDoc = customerDocumentRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Customer not found with id " + id));
@@ -129,7 +128,7 @@ public class DocxTemplateService {
 			Optional<Customer> customer = customerRepository.findById(customerDocument.getCustomerId());
 
 			Calendar calendar = Calendar.getInstance();
-			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy", Locale.of("hi", "IN"));
+			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
 			String formattedDate = formatter.format(calendar.getTime());
 
 			Optional<HashMap<String, Object>> placeholders = customer.map(cust -> {

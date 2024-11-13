@@ -28,7 +28,6 @@ import com.rtcsoft.sevakendra.exceptions.ApiException;
 import com.rtcsoft.sevakendra.repositories.CustomerRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -100,10 +99,16 @@ public class CustomerService {
 		return ResponseEntity.status(HttpStatus.OK).body(updatedCustomer);
 	}
 
-	public ResponseEntity<List<Customer>> getAllUsers(HttpServletRequest request) {
+	public List<Customer> getAllCustomers(HttpServletRequest request) {
 		long authUserId = sharedService.getUserIdFromHeader(request);
 		List<Customer> customers = customerRepository.findAllByUserId(authUserId);
-		return ResponseEntity.ok(customers);
+		return customers;
+	}
+
+	public List<Customer> getRecentCustomers(HttpServletRequest request, int limit) {
+		long authUserId = sharedService.getUserIdFromHeader(request);
+		List<Customer> customers = customerRepository.findRecentByUserId(authUserId, limit);
+		return customers;
 	}
 
 	public ResponseEntity<Optional<Customer>> findById(long id) {

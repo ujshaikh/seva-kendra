@@ -10,8 +10,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.rtcsoft.sevakendra.enums.AccountStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,11 +44,18 @@ public class User implements UserDetails {
 	@Column(nullable = false)
 	private String password;
 
+	@Column(nullable = false)
+	private String mobileNumber;
+
 	@Column(nullable = true)
 	private String token;
 
 	@Column(columnDefinition = "TIMESTAMP")
 	private LocalDateTime tokenCreationDate;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = true)
+	private AccountStatus status;
 
 	@CreationTimestamp
 	@Column(updatable = false, name = "created_at")
@@ -61,11 +72,6 @@ public class User implements UserDetails {
 
 	@Override
 	public boolean isAccountNonExpired() {
-		return true;
-	}
-
-	@Override
-	public boolean isAccountNonLocked() {
 		return true;
 	}
 
@@ -96,6 +102,16 @@ public class User implements UserDetails {
 	@Override
 	public String getUsername() {
 		return email;
+	}
+
+	// Additional fields, constructors, getters, setters
+	@Override
+	public boolean isAccountNonLocked() {
+		return this.status != AccountStatus.BLOCKED;
+	}
+
+	public boolean isAccountApproved() {
+		return this.status == AccountStatus.ACTIVE;
 	}
 
 }

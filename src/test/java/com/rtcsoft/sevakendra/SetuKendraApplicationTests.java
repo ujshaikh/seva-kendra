@@ -1,4 +1,4 @@
-package com.rtcsoft.setu_kendra;
+package com.rtcsoft.sevakendra;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
