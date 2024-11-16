@@ -65,13 +65,16 @@ public class CustomerService {
 		customer.setOccupation(Optional.ofNullable(input.getOccupation()).orElse(customer.getOccupation()));
 		customer.setAadharNumber(Optional.ofNullable(input.getAadharNumber()).orElse(customer.getAadharNumber()));
 		customer.setImage(Optional.ofNullable(input.getImage()).orElse(customer.getImage()));
-		customer.setUserId(input.getUserId() != 0 ? input.getUserId() : customer.getUserId());
 		return customer;
 	}
 
-	public ResponseEntity<Customer> create(CustomerDTO input, MultipartFile file) throws ApiException, IOException {
+	public ResponseEntity<Customer> create(HttpServletRequest request, CustomerDTO input, MultipartFile file)
+			throws ApiException, IOException {
 		validateExistingEntry(input);
 		Customer newCustomer = mapDtoToCustomer(input, Optional.empty());
+
+		long authUserId = sharedService.getUserIdFromHeader(request);
+		newCustomer.setUserId(authUserId);
 
 		if (file != null && !file.isEmpty()) {
 			newCustomer.setImage(storeFile(file, input));
@@ -81,7 +84,7 @@ public class CustomerService {
 		return ResponseEntity.status(HttpStatus.CREATED).body(newCustomer);
 	}
 
-	public ResponseEntity<Customer> update(CustomerDTO input, MultipartFile file, long id)
+	public ResponseEntity<Customer> update(HttpServletRequest request, CustomerDTO input, MultipartFile file, long id)
 			throws ApiException, IOException {
 		Customer existingCustomer = customerRepository.findById(id)
 				.orElseThrow(() -> new ApiException("Customer not found with id " + id));
@@ -89,8 +92,15 @@ public class CustomerService {
 		validateExistingEntry(input, id);
 		Customer updatedCustomer = mapDtoToCustomer(input, Optional.of(existingCustomer));
 
+		long authUserId = sharedService.getUserIdFromHeader(request);
+		updatedCustomer.setUserId(authUserId);
+
 		if (file != null && !file.isEmpty()) {
-			updatedCustomer.setImage(storeFile(file, input));
+			String filePath = storeFile(file, input);
+
+			Path path = Paths.get(filePath);
+			String fileName = path.getFileName().toString();
+			updatedCustomer.setImage(fileName);
 		}
 
 		updatedCustomer.setId(id);

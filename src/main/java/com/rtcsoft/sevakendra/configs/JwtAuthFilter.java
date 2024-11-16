@@ -81,10 +81,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 					SecurityContextHolder.getContext().setAuthentication(authToken);
 
 					// Get userName form http session: Added on 26/10/2024
-					if (!sharedService.checkAccessBySessionAtrribute(request)) {
-						response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorised access!");
-						throw new RuntimeException("Unauthorised access!");
-					}
+//					if (!sharedService.checkAccessBySessionAtrribute(request)) {
+//						response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorised access!");
+//						throw new RuntimeException("Unauthorised access!");
+//					}
 				}
 			}
 

@@ -1,12 +1,14 @@
 package com.rtcsoft.sevakendra.services;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +32,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.rtcsoft.sevakendra.dtos.CustomerDocumentDTO;
+import com.rtcsoft.sevakendra.dtos.DocxTemplateRequestBodyDTO;
+import com.rtcsoft.sevakendra.dtos.DocxTemplateRequestBodyDTO.DocTemplate;
 import com.rtcsoft.sevakendra.entities.Customer;
 import com.rtcsoft.sevakendra.entities.CustomerDocument;
 import com.rtcsoft.sevakendra.exceptions.ApiException;
@@ -50,7 +53,8 @@ public class DocxTemplateService {
 	private static String IMG_SRC = "src/main/resources/images/rtc-logo.png";
 
 	private static String SRC = "src/main/resources/docs/cast-certificate.docx";
-	private static String DEST_PATH = "src/main/resources/static/uploads/";
+	private static String DOC_TEMPLATE_SRC_PATH = "src/main/resources/docs/";
+	private static String GEN_DOCS_DEST_PATH = "src/main/resources/static/generated/docs/";
 	// private static String FONT1 =
 	// "src/main/resources/fonts/NotoSans/static/NotoSans-Black.ttf";
 	private static String FONT2 = "src/main/resources/fonts/freesans/FreeSans.ttf";
@@ -69,6 +73,63 @@ public class DocxTemplateService {
 	@Autowired
 	HttpServletRequest request;
 
+	// Create a list to hold file paths
+	List<String> fileList = new ArrayList<>();
+
+	public DocxTemplateService() {
+		super();
+		createDestinationFolder(GEN_DOCS_DEST_PATH);
+
+		// Scan the directory and populate the list
+		scanDirectory(new File(DOC_TEMPLATE_SRC_PATH), fileList);
+
+		LOGGER.info("SCANNED_DOCS_TEMPLATE_FILES_LIST");
+		System.out.println(fileList);
+	}
+
+	private void createDestinationFolder(String folderPath) {
+		// Create a File object
+		File folder = new File(folderPath);
+
+		// Check if the folder exists
+		if (!folder.exists()) {
+			// Create the directories
+			boolean created = folder.mkdirs();
+
+			// Verify if the directories were successfully created
+			if (created) {
+				System.out.println("Folders created successfully: " + folderPath);
+			} else {
+				System.out.println("Failed to create folders: " + folderPath);
+			}
+		}
+	}
+
+	/**
+	 * Recursively scans a directory and adds file paths to the list.
+	 *
+	 * @param folder   The directory to scan
+	 * @param fileList The list to store file paths
+	 */
+	public static void scanDirectory(File folder, List<String> fileList) {
+		if (folder.exists() && folder.isDirectory()) {
+			File[] files = folder.listFiles();
+			if (files != null) {
+				for (File file : files) {
+					if (file.isFile()) {
+						// Add file name to the list
+						fileList.add(file.getName());
+					} else if (file.isDirectory()) {
+						// Recurse into sub directory
+						scanDirectory(file, fileList);
+					}
+				}
+			}
+		} else {
+			System.out.println("The folder does not exist or is not a directory: " + folder.getAbsolutePath());
+		}
+	}
+
 	/**
 	 * Create or Update help to generate document with new/updated input
 	 * 
@@ -76,28 +137,80 @@ public class DocxTemplateService {
 	 * @return CustomerDocument
 	 * @throws ApiException
 	 */
-	public ResponseEntity<CustomerDocument> createOrUpdate(CustomerDocumentDTO input) throws ApiException {
+	public ResponseEntity<List<DocTemplate>> createOrUpdate(DocxTemplateRequestBodyDTO input) throws ApiException {
+//		System.out.println("IDs: " + input.getIds());
+
+		List<Integer> customerIds = input.getCustomerIds();
+		List<DocTemplate> docTemplates = input.getDocTemplates();
+		System.out.println("Customer IDs: " + customerIds);
+
 		try {
-			Optional<CustomerDocument> existingCustDoc = customerDocumentRepository.findById(input.getId());
-			String path = generateDocument(input, existingCustDoc);
-			if (path != null) {
-				CustomerDocument custDoc = existingCustDoc.orElseGet(CustomerDocument::new);
-				custDoc.setUserId(Optional.ofNullable(input.getUserId()).orElse(custDoc.getUserId()));
-				custDoc.setCustomerId(Optional.ofNullable(input.getCustomerId()).orElse(custDoc.getCustomerId()));
-				custDoc.setDocName(Optional.ofNullable(input.getDocName()).orElse(custDoc.getDocName()));
-				custDoc.setThumbnail(Optional.ofNullable(input.getThumbnail()).orElse(custDoc.getThumbnail()));
-				custDoc.setDocPath(path);
+			customerIds.forEach(customerId -> {
+				docTemplates.forEach(template -> {
+					System.out.println("Template ID: " + template.getId());
+					System.out.println("Title: " + template.getTitle());
+					System.out.println("Active: " + template.isActive());
+					System.out.println("Checked: " + template.isChecked());
+					System.out.println("customerId: " + customerId);
 
-				customerDocumentRepository.save(custDoc);
+					boolean docTemplateExists = fileList.contains(template.getTitle());
 
-				return ResponseEntity.status(HttpStatus.CREATED).body(custDoc);
-			}
+					if (docTemplateExists && template.isActive()) {
+						try {
+							String filePath = generateDocument(template, customerId);
+							System.out.println("Printing After Generating Docs");
+							System.out.println(filePath);
+							Path path = Paths.get(filePath);
+							String fileName = path.getFileName().toString();
+							if (fileName != null) {
+								CustomerDocument custDoc = new CustomerDocument(); // existingCustDoc.orElseGet(CustomerDocument::new);
+								custDoc.setCustomerId(customerId); // .orElseGet(custDoc.getCustomerId()));
+								custDoc.setDocName(fileName); // .orElse(custDoc.getDocName()));
+								custDoc.setThumbnail(null); // .orElse(custDoc.getThumbnail()));
+								custDoc.setDocPath(filePath);
 
-		} catch (Exception e) {
-			e.printStackTrace();
-			LOGGER.error(e.getMessage());
+								long authUserId = sharedService.getUserIdFromHeader(request);
+								custDoc.setUserId(authUserId);
+
+								customerDocumentRepository.save(custDoc);
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+							return;
+						}
+					}
+
+				});
+			});
+
+			return ResponseEntity.status(HttpStatus.CREATED).body(docTemplates);
+		} catch (Exception e2) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 		}
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+
+//		try {
+//			Optional<CustomerDocument> existingCustDoc = customerDocumentRepository.findById(input.getId());
+//			String path = generateDocument(input, existingCustDoc);
+//			if (path != null) {
+//				CustomerDocument custDoc = existingCustDoc.orElseGet(CustomerDocument::new);
+//				custDoc.setCustomerId(Optional.ofNullable(input.getCustomerId()).orElse(custDoc.getCustomerId()));
+//				custDoc.setDocName(Optional.ofNullable(input.getDocName()).orElse(custDoc.getDocName()));
+//				custDoc.setThumbnail(Optional.ofNullable(input.getThumbnail()).orElse(custDoc.getThumbnail()));
+//				custDoc.setDocPath(path);
+//				
+//				long authUserId = sharedService.getUserIdFromHeader(request);
+//				custDoc.setUserId(authUserId);
+//
+//				customerDocumentRepository.save(custDoc);
+//
+//				return ResponseEntity.status(HttpStatus.CREATED).body(custDoc);
+//			}
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			LOGGER.error(e.getMessage());
+//		}
+//		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	}
 
 	public ResponseEntity<List<CustomerDocument>> getAllDocuments() {
@@ -123,10 +236,8 @@ public class DocxTemplateService {
 		return ResponseEntity.status(HttpStatus.OK).body(existingCustDoc);
 	}
 
-	private Optional<HashMap<String, Object>> prepareDataMap(CustomerDocumentDTO customerDocument) {
+	private Optional<HashMap<String, Object>> prepareDataMap(Optional<Customer> customer) {
 		try {
-			Optional<Customer> customer = customerRepository.findById(customerDocument.getCustomerId());
-
 			Calendar calendar = Calendar.getInstance();
 			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
 			String formattedDate = formatter.format(calendar.getTime());
@@ -169,18 +280,18 @@ public class DocxTemplateService {
 	 * @throws IOException input|output exception
 	 **/
 
-	public String generateDocument(CustomerDocumentDTO customerDocument, Optional<CustomerDocument> existingCustDoc)
-			throws IOException {
-		Optional<HashMap<String, Object>> data = prepareDataMap(customerDocument);
+	public String generateDocument(DocTemplate template, int customerId) throws IOException {
+		Optional<Customer> customer = customerRepository.findById(customerId);
+		Supplier<RuntimeException> exceptionSupplier = () -> new RuntimeException("Customer not found");
+		String firstName = (customer.map(Customer::getFirstName).orElseThrow(exceptionSupplier)).toLowerCase();
+		String lastName = (customer.map(Customer::getLastName).orElseThrow(exceptionSupplier)).toLowerCase();
+
+		Optional<HashMap<String, Object>> data = prepareDataMap(customer);
+
 		if (!data.isEmpty()) {
-			Optional<Customer> customer = customerRepository.findById(customerDocument.getCustomerId());
-
-			Supplier<RuntimeException> exceptionSupplier = () -> new RuntimeException("Customer not found");
-			String firstName = (customer.map(Customer::getFirstName).orElseThrow(exceptionSupplier)).toLowerCase();
-			String lastName = (customer.map(Customer::getLastName).orElseThrow(exceptionSupplier)).toLowerCase();
-
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			FileInputStream fis = new FileInputStream(SRC);
+			String docTemplatePath = DOC_TEMPLATE_SRC_PATH + template.getTitle();
+			FileInputStream fis = new FileInputStream(docTemplatePath);
 			try (XWPFDocument xwpfDocument = new XWPFDocument(fis)) {
 				replacePlaceholdersInParagraphs(data, xwpfDocument);
 				replacePlaceholderInTables(data, xwpfDocument);
@@ -188,11 +299,9 @@ public class DocxTemplateService {
 				xwpfDocument.write(outputStream);
 
 				// Create target path using first name, last name and document name from this
-				String docNameFromDb = existingCustDoc.map(CustomerDocument::getDocName).orElse("unknown-document");
-				String docName = Optional.ofNullable(customerDocument.getDocName()).orElse(docNameFromDb);
-				String targetFileExt = getFileExtension(SRC);
-				String targetFilePath = String.format("%s%s-%s-%s.%s", DEST_PATH, firstName, lastName, docName,
-						targetFileExt);
+//				String docNameFromDb = existingCustDoc.map(CustomerDocument::getDocName).orElse("unknown-document");
+				String docName = template.getTitle();
+				String targetFilePath = String.format("%s%s-%s-%s", GEN_DOCS_DEST_PATH, firstName, lastName, docName);
 
 				Path path = Paths.get(targetFilePath);
 				System.out.println("File created at " + path);
@@ -204,6 +313,88 @@ public class DocxTemplateService {
 		}
 		return null;
 	}
+
+//	private Optional<HashMap<String, Object>> prepareDataMap(CustomerDocumentDTO customerDocument) {
+//		try {
+//			Optional<Customer> customer = customerRepository.findById(customerDocument.getCustomerId());
+//
+//			Calendar calendar = Calendar.getInstance();
+//			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+//			String formattedDate = formatter.format(calendar.getTime());
+//
+//			Optional<HashMap<String, Object>> placeholders = customer.map(cust -> {
+//				HashMap<String, Object> map = new HashMap<>();
+//				map.put("firstName", cust.getFirstName());
+//				map.put("middleName", cust.getMiddleName());
+//				map.put("lastName", cust.getLastName());
+//				map.put("phoneNumber", cust.getPhoneNumber());
+//				map.put("address", cust.getAddress());
+//				map.put("place", cust.getPlace());
+//				map.put("age", cust.getAge());
+//				map.put("cast", cust.getCast());
+//				map.put("occupation", cust.getOccupation());
+//				map.put("aadharNumber", cust.getAadharNumber());
+//				map.put("image", cust.getImage());
+//				map.put("date", formattedDate);
+//				return map;
+//			});
+//
+//			return placeholders;
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		return null;
+//	}
+//
+//	/**
+//	 * Method for generating DocX report by replacing data in existing template
+//	 * 
+//	 * @param existingCustDoc
+//	 *
+//	 * @param docXTemplateFileWithExtension given name of docX template with
+//	 *                                      extension
+//	 * @param data                          given map of data parameters that need
+//	 *                                      to be replacement for docX placeholders
+//	 * @return
+//	 * @return generated report name
+//	 * @throws IOException input|output exception
+//	 **/
+//
+//	public String generateDocument(CustomerDocumentDTO customerDocument, Optional<CustomerDocument> existingCustDoc)
+//			throws IOException {
+//		Optional<HashMap<String, Object>> data = prepareDataMap(customerDocument);
+//		if (!data.isEmpty()) {
+//			Optional<Customer> customer = customerRepository.findById(customerDocument.getCustomerId());
+//
+//			Supplier<RuntimeException> exceptionSupplier = () -> new RuntimeException("Customer not found");
+//			String firstName = (customer.map(Customer::getFirstName).orElseThrow(exceptionSupplier)).toLowerCase();
+//			String lastName = (customer.map(Customer::getLastName).orElseThrow(exceptionSupplier)).toLowerCase();
+//
+//			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//			FileInputStream fis = new FileInputStream(SRC);
+//			try (XWPFDocument xwpfDocument = new XWPFDocument(fis)) {
+//				replacePlaceholdersInParagraphs(data, xwpfDocument);
+//				replacePlaceholderInTables(data, xwpfDocument);
+//
+//				xwpfDocument.write(outputStream);
+//
+//				// Create target path using first name, last name and document name from this
+//				String docNameFromDb = existingCustDoc.map(CustomerDocument::getDocName).orElse("unknown-document");
+//				String docName = Optional.ofNullable(customerDocument.getDocName()).orElse(docNameFromDb);
+//				String targetFileExt = getFileExtension(SRC);
+//				String targetFilePath = String.format("%s%s-%s-%s.%s", DEST_PATH, firstName, lastName, docName,
+//						targetFileExt);
+//
+//				Path path = Paths.get(targetFilePath);
+//				System.out.println("File created at " + path);
+//				Files.write(path, outputStream.toByteArray());
+//				return path.toString();
+//			} catch (Exception e) {
+//				LOGGER.error("Error occurred while generating report: {}", e.getMessage());
+//			}
+//		}
+//		return null;
+//	}
 
 	/**
 	 * Method for replacing docx placeholders with given data parameters in every

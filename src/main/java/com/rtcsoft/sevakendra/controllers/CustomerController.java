@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,10 +32,12 @@ import com.rtcsoft.sevakendra.services.JwtService;
 import com.rtcsoft.sevakendra.utils.ResponseUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 
 @RequestMapping("/customer")
 @RestController
+@Transactional
 public class CustomerController {
 	@Autowired
 	private final JwtService jwtService;
@@ -57,16 +58,17 @@ public class CustomerController {
 	}
 
 	@PostMapping(value = "/create", consumes = "multipart/form-data")
-	public ResponseEntity<Customer> create(@ModelAttribute CustomerDTO customer,
-			@RequestPart("file") MultipartFile file) throws ApiException, IllegalStateException, IOException {
-		return customerService.create(customer, file);
+	public ResponseEntity<Customer> create(@NonNull HttpServletRequest request, @ModelAttribute CustomerDTO customer,
+			@RequestParam(value = "file", required = false) MultipartFile file)
+			throws ApiException, IllegalStateException, IOException {
+		return customerService.create(request, customer, file);
 	}
 
 	@PutMapping(value = "/update/{id}", consumes = "multipart/form-data")
-	public ResponseEntity<Customer> update(@ModelAttribute CustomerDTO customer,
-			@RequestPart(value = "file", required = false) MultipartFile file, @PathVariable long id)
+	public ResponseEntity<Customer> update(@NonNull HttpServletRequest request, @ModelAttribute CustomerDTO customer,
+			@RequestParam(value = "file", required = false) MultipartFile file, @PathVariable long id)
 			throws ApiException, IOException {
-		return customerService.update(customer, file, id);
+		return customerService.update(request, customer, file, id);
 	}
 
 	@GetMapping("/list")
