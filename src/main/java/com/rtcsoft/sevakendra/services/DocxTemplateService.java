@@ -52,9 +52,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class DocxTemplateService {
 
-	private static String IMG_SRC = "src/main/resources/images/rtc-logo.png";
-
-	private static String SRC = "src/main/resources/docs/cast-certificate.docx";
 	private static String DOC_TEMPLATE_SRC_PATH = "src/main/resources/docs/";
 	private static String GEN_DOCS_DEST_PATH = "src/main/resources/static/generated/docs/";
 	// private static String FONT1 =
@@ -114,12 +111,17 @@ public class DocxTemplateService {
 	 * @param fileList The list to store file paths
 	 */
 	public static void scanDirectory(File folder, List<String> fileList) {
+		System.out.println("SCANNING_STARTED_IN_RECUSRSIVE_WAY");
 		if (folder.exists() && folder.isDirectory()) {
+			System.out.println("CHECKED_FOLDER_EXISTS");
 			File[] files = folder.listFiles();
+			System.out.println(files);
 			if (files != null) {
 				for (File file : files) {
 					if (file.isFile()) {
 						// Add file name to the list
+						System.out.println("ADDING_FILE_TO_THE_LIST");
+						System.out.println(file.getName());
 						fileList.add(file.getName());
 					} else if (file.isDirectory()) {
 						// Recurse into sub directory
