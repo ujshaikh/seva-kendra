@@ -112,12 +112,16 @@ public class DocxTemplateService {
 	 */
 	public static void scanDirectory(File folder, List<String> fileList) {
 		try {
+			if (!folder.canRead()) {
+				throw new IOException(
+						"Cannot read the folder due to insufficient permissions: " + folder.getAbsolutePath());
+			}
 			System.out.println("SCANNING_STARTED_IN_RECUSRSIVE_WAY");
 			if (folder.exists() && folder.isDirectory()) {
 				System.out.println("CHECKED_FOLDER_EXISTS");
 				File[] files = folder.listFiles();
 				System.out.println(files);
-				if (files != null) {
+				if (files != null && files.length > 0) {
 					for (File file : files) {
 						if (file.isFile()) {
 							// Add file name to the list
@@ -133,7 +137,7 @@ public class DocxTemplateService {
 			} else {
 				System.out.println("The folder does not exist or is not a directory: " + folder.getAbsolutePath());
 			}
-		} catch (Exception e) {
+		} catch (IllegalArgumentException | IOException e) {
 			e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
