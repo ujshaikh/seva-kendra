@@ -39,6 +39,8 @@ import com.rtcsoft.sevakendra.entities.CustomerDocument;
 import com.rtcsoft.sevakendra.exceptions.ApiException;
 import com.rtcsoft.sevakendra.repositories.CustomerDocumentRepository;
 import com.rtcsoft.sevakendra.repositories.CustomerRepository;
+import com.rtcsoft.sevakendra.responses.ApiResponse;
+import com.rtcsoft.sevakendra.utils.ResponseUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -213,10 +215,18 @@ public class DocxTemplateService {
 //		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
 	}
 
-	public ResponseEntity<List<CustomerDocument>> getAllDocuments() {
+	public ResponseEntity<ApiResponse<List<CustomerDocument>>> getAllDocuments(int customerId) {
 		Long userId = sharedService.getUserIdFromSession(request);
-		List<CustomerDocument> customerDocuments = customerDocumentRepository.findAllByUserId(userId);
-		return ResponseEntity.status(HttpStatus.OK).body(customerDocuments);
+		System.out.println("LISTING_FETCH_USER");
+		System.out.println(userId);
+		System.out.println(customerId);
+		List<CustomerDocument> customerDocuments;
+		if (customerId != -1) {
+			customerDocuments = customerDocumentRepository.findAllByCustomerId(userId, customerId);
+		} else {
+			customerDocuments = customerDocumentRepository.findAllByUserId(userId);
+		}
+		return ResponseUtil.successResponse(customerDocuments, "Fetched customer documents");
 	}
 
 	public ResponseEntity<Optional<CustomerDocument>> findById(long id) {

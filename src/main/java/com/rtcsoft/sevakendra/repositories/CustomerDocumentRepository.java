@@ -25,4 +25,9 @@ public interface CustomerDocumentRepository extends CrudRepository<CustomerDocum
 
 	void deleteById(long id);
 
+	@Query("SELECT COUNT(c) FROM CustomerDocument c WHERE c.userId = ?1")
+	long findCountById(Long userId);
+
+	@Query("SELECT c FROM CustomerDocument c WHERE c.userId = ?1 AND c.customerId = ?2")
+	List<CustomerDocument> findAllByCustomerId(long userId, int customerId);
 }

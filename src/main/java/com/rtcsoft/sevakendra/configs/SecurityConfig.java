@@ -2,6 +2,7 @@ package com.rtcsoft.sevakendra.configs;
 
 import java.util.List;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -58,5 +59,14 @@ public class SecurityConfig {
 		source.registerCorsConfiguration("/**", configuration);
 
 		return source;
+	}
+
+	@Bean
+	public FilterRegistrationBean<ThrottlingFilter> throttlingFilter() {
+		FilterRegistrationBean<ThrottlingFilter> registrationBean = new FilterRegistrationBean<>();
+		registrationBean.setFilter(new ThrottlingFilter());
+		registrationBean.addUrlPatterns("/*"); // Apply to all URLs
+		registrationBean.setOrder(1); // Priority
+		return registrationBean;
 	}
 }

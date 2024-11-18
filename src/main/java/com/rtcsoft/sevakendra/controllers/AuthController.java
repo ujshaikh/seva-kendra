@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.rtcsoft.sevakendra.dtos.LoginUserDTO;
 import com.rtcsoft.sevakendra.dtos.RegisterUserDTO;
 import com.rtcsoft.sevakendra.entities.User;
+import com.rtcsoft.sevakendra.repositories.CustomerDocumentRepository;
+import com.rtcsoft.sevakendra.repositories.CustomerRepository;
 import com.rtcsoft.sevakendra.responses.ApiResponse;
 import com.rtcsoft.sevakendra.services.AuthService;
 import com.rtcsoft.sevakendra.services.JwtService;
@@ -43,6 +45,12 @@ public class AuthController {
 	private ResetPasswordService resetPasswordService;
 	@Autowired
 	HttpServletRequest request;
+
+	@Autowired
+	CustomerRepository customerRespository;
+
+	@Autowired
+	CustomerDocumentRepository customerDocumentRespository;
 
 	@Autowired
 	private TokenBlacklistService tokenBlacklistService;
@@ -94,6 +102,14 @@ public class AuthController {
 			data.put("id", userId);
 			data.put("fullName", authenticatedUser.getFullName());
 			data.put("email", authenticatedUser.getEmail());
+
+			// Analytical data for logged in user
+			long totalCustomers = customerRespository.findCountById(userId);
+			long totalGeneratedDocs = customerDocumentRespository.findCountById(userId);
+			data.put("totalCustomers", totalCustomers);
+			data.put("totalGeneratedDocs", totalGeneratedDocs);
+			data.put("totalTokens", 100); // Temp: needs to get from package
+			data.put("package", "Test"); // Temp: needs to get from package
 
 			return ResponseUtil.successResponse(data, null);
 		} catch (Exception e) {

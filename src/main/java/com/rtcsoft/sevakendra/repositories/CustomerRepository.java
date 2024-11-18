@@ -31,6 +31,9 @@ public interface CustomerRepository extends CrudRepository<Customer, Long> {
 	@Query("SELECT c FROM Customer c WHERE c.userId = ?1 ORDER BY c.updatedAt DESC LIMIT ?2")
 	ArrayList<Customer> findRecentByUserId(Long userId, int limit);
 
+	@Query("SELECT COUNT(c) FROM Customer c WHERE c.userId = ?1")
+	long findCountById(Long userId);
+
 //	List<Customer> findAllById(long userId);
 
 }

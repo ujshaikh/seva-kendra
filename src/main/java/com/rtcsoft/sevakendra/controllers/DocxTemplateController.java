@@ -17,12 +17,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rtcsoft.sevakendra.dtos.DocxTemplateRequestBodyDTO;
 import com.rtcsoft.sevakendra.dtos.DocxTemplateRequestBodyDTO.DocTemplate;
 import com.rtcsoft.sevakendra.entities.CustomerDocument;
 import com.rtcsoft.sevakendra.exceptions.ApiException;
+import com.rtcsoft.sevakendra.responses.ApiResponse;
 import com.rtcsoft.sevakendra.services.DocxTemplateService;
 import com.rtcsoft.sevakendra.services.JwtService;
 
@@ -57,8 +59,9 @@ public class DocxTemplateController {
 	}
 
 	@GetMapping("/list")
-	public ResponseEntity<List<CustomerDocument>> list() throws ApiException {
-		return docService.getAllDocuments();
+	public ResponseEntity<ApiResponse<List<CustomerDocument>>> list(
+			@RequestParam(value = "customerId", defaultValue = "-1") int customerId) throws ApiException {
+		return docService.getAllDocuments(customerId);
 	}
 
 	@GetMapping("{id}")

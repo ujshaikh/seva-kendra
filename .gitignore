@@ -30,4 +30,6 @@ src/main/resources/*.properties
 
 src/main/resources/docs/*
 src/main/resources/output/*
+src/main/resources/static/uploads/*
+src/main/resources/static/generated/*
 license/*
