@@ -8,19 +8,20 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties("storage")
 public class StorageProperties {
 	@Value("${spring.customers-uploads}")
-	private String uploadDir;
+	private String customerImgUploadEnv;
 
 	/**
 	 * Folder location for storing files
 	 */
-	private String location = uploadDir != null ? uploadDir : "/var/sevakendra/uploads/";
+	private String customerImgUploadPath = customerImgUploadEnv != null ? customerImgUploadEnv
+			: "/var/sevakendra/uploads/";
 
-	public String getLocation() {
-		return location;
+	public String getCustomerImgUploadPath() {
+		return customerImgUploadPath;
 	}
 
-	public void setLocation(String location) {
-		this.location = location;
+	public void setCustomerImgUploadPath(String location) {
+		this.customerImgUploadPath = location;
 	}
 
 }

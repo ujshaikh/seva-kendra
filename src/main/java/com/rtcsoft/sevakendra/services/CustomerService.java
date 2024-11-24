@@ -48,7 +48,7 @@ public class CustomerService {
 	public CustomerService(StorageProperties properties, SharedService sharedService) {
 		this.sharedService = sharedService;
 
-		String uploadDir = properties.getLocation().trim();
+		String uploadDir = properties.getCustomerImgUploadPath().trim();
 		if (uploadDir.isEmpty()) {
 			throw new RuntimeException("File upload location cannot be empty.");
 		}
@@ -60,7 +60,7 @@ public class CustomerService {
 				directory.mkdirs(); // Create the directory
 			}
 
-			this.rootLocation = Paths.get(properties.getLocation());
+			this.rootLocation = Paths.get(uploadDir);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
