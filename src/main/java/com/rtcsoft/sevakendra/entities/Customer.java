@@ -28,7 +28,7 @@ import lombok.Setter;
 @Table(name = "customers")
 public class Customer {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.TABLE)
 	@NotNull
 	@Column
 	private Long id;

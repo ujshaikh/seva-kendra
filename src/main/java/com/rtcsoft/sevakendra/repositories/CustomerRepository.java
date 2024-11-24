@@ -26,7 +26,7 @@ public interface CustomerRepository extends CrudRepository<Customer, Long> {
 	ArrayList<Customer> findByFullNameExcludingMe(long id, String fname, String mname, String lname);
 
 	// @Query("SELECT c FROM Customer c WHERE c.userId = ?1")
-	ArrayList<Customer> findAllByUserId(Long userId);
+	ArrayList<Customer> findAllByUserIdOrderByUpdatedAtDesc(Long userId);
 
 	@Query("SELECT c FROM Customer c WHERE c.userId = ?1 ORDER BY c.updatedAt DESC LIMIT ?2")
 	ArrayList<Customer> findRecentByUserId(Long userId, int limit);

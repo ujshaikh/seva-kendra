@@ -1,5 +1,6 @@
 package com.rtcsoft.sevakendra.services;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -39,17 +40,30 @@ public class CustomerService {
 
 	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-	private final Path rootLocation;
+	private Path rootLocation;
 
 	private SharedService sharedService;
 
 	@Autowired
 	public CustomerService(StorageProperties properties, SharedService sharedService) {
-		if (properties.getLocation().trim().isEmpty()) {
+		this.sharedService = sharedService;
+
+		String uploadDir = properties.getLocation().trim();
+		if (uploadDir.isEmpty()) {
 			throw new RuntimeException("File upload location cannot be empty.");
 		}
-		this.rootLocation = Paths.get(properties.getLocation());
-		this.sharedService = sharedService;
+
+		try {
+
+			File directory = new File(uploadDir);
+			if (!directory.exists()) {
+				directory.mkdirs(); // Create the directory
+			}
+
+			this.rootLocation = Paths.get(properties.getLocation());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	private Customer mapDtoToCustomer(CustomerDTO input, Optional<Customer> existingCustomerOpt) {
@@ -111,7 +125,7 @@ public class CustomerService {
 
 	public List<Customer> getAllCustomers(HttpServletRequest request) {
 		long authUserId = sharedService.getUserIdFromHeader(request);
-		List<Customer> customers = customerRepository.findAllByUserId(authUserId);
+		List<Customer> customers = customerRepository.findAllByUserIdOrderByUpdatedAtDesc(authUserId);
 		return customers;
 	}
 
@@ -157,12 +171,14 @@ public class CustomerService {
 				.toLowerCase();
 		Path destinationFile = rootLocation.resolve(Paths.get(file.getOriginalFilename())).normalize().toAbsolutePath();
 
-		if (!destinationFile.getParent().equals(rootLocation.toAbsolutePath())) {
-			throw new RuntimeException("Cannot store file outside the current directory.");
-		}
+//		if (!destinationFile.getParent().equals(rootLocation.toAbsolutePath())) {
+//			throw new RuntimeException("Cannot store file outside the current directory.");
+//		}
 
 		Path newDestinationFile = addPrefixToFile(destinationFile, customerName);
 		try (InputStream inputStream = file.getInputStream()) {
+			System.out.println("NEW_DEST_FILE");
+			System.out.println(newDestinationFile);
 			Files.copy(inputStream, newDestinationFile, StandardCopyOption.REPLACE_EXISTING);
 		}
 		return newDestinationFile.toString();
