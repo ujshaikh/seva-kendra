@@ -1,12 +1,15 @@
 package com.rtcsoft.sevakendra.controllers;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.rtcsoft.sevakendra.configs.StorageProperties;
 import com.rtcsoft.sevakendra.dtos.DocxTemplateRequestBodyDTO;
 import com.rtcsoft.sevakendra.dtos.DocxTemplateRequestBodyDTO.DocTemplate;
 import com.rtcsoft.sevakendra.entities.CustomerDocument;
@@ -43,12 +47,15 @@ public class DocxTemplateController {
 	@Autowired
 	private final ResourceLoader resourceLoader;
 
+	private String genDocsPath;
+
 	@Autowired
-	public DocxTemplateController(DocxTemplateService docService, JwtService jwtService,
-			ResourceLoader resourceLoader) {
+	public DocxTemplateController(DocxTemplateService docService, JwtService jwtService, ResourceLoader resourceLoader,
+			StorageProperties properties) {
 		this.jwtService = jwtService;
 		this.docService = docService;
 		this.resourceLoader = resourceLoader;
+		this.genDocsPath = properties.getGenDocsPath();
 	}
 
 	@PostMapping(value = "/generate", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -74,18 +81,22 @@ public class DocxTemplateController {
 		return docService.delete(id);
 	}
 
-	@GetMapping("/generated/docs/{filename}")
-	public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
-		Resource file = resourceLoader.getResource("classpath:static/generated/docs/" + filename);
+	@GetMapping("/generated/docs/{fileName}")
+	public ResponseEntity<Resource> serveImage(@PathVariable String fileName) {
+		try {
+			Path filePath = Paths.get(this.genDocsPath).resolve(fileName).normalize();
+			Resource resource = new UrlResource(filePath.toUri());
 
-		if (!file.exists()) {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+			if (!resource.exists()) {
+				return ResponseEntity.notFound().build();
+			}
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.add(HttpHeaders.CONTENT_TYPE, "image/jpeg");
+
+			return new ResponseEntity<>(resource, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError().build();
 		}
-
-		HttpHeaders headers = new HttpHeaders();
-		headers.add(HttpHeaders.CONTENT_TYPE,
-				"application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-
-		return new ResponseEntity<>(file, headers, HttpStatus.OK);
 	}
 }
